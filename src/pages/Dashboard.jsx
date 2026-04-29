@@ -7,6 +7,7 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import HistoryModal from '../components/HistoryModal';
+import Sidebar from '../components/Sidebar';
 import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const Dashboard = () => {
@@ -125,28 +126,21 @@ const Dashboard = () => {
     return <LoadingScreen />;
   }
 
+  const sidebarButtons = [
+    { label: 'Admin Panel', icon: '👑', onClick: () => navigate('/admin'), background: '#fef7e0', color: '#b08d00', isHidden: userRole !== 'admin' },
+    { label: 'Geçmişi Gör', icon: '🕒', onClick: () => setIsHistoryOpen(true), background: '#e8f0fe', color: '#1a73e8' },
+    { label: 'Profil', icon: '👤', onClick: () => navigate('/profile'), background: '#e6f4ea', color: '#137333' },
+    { label: isVoiceEnabled ? 'Ses Açık' : 'Ses Kapalı', icon: isVoiceEnabled ? '🔊' : '🔇', onClick: () => setIsVoiceEnabled(!isVoiceEnabled), background: isVoiceEnabled ? '#e8f0fe' : '#f1f3f4', color: isVoiceEnabled ? '#1a73e8' : '#5f6368', closeOnClick: false },
+    { label: 'Çıkış', icon: '🚪', onClick: logout, background: '#fce8e6', color: '#d93025' }
+  ];
+
   return (
     <div className="app-container">
-      <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {userRole === 'admin' && (
-            <button onClick={() => navigate('/admin')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#f4b400', color: 'black' }}>👑 Admin Panel</button>
-          )}
-          <button onClick={() => setIsHistoryOpen(true)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#4a86e8', color: 'white' }}>Geçmişi Gör</button>
-          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
-          <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: isVoiceEnabled ? '#4a86e8' : '#666', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            {isVoiceEnabled ? '🔊 Ses Açık' : '🔇 Ses Kapalı'}
-          </button>
-          <button onClick={logout} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#e06666' }}>Çıkış</button>
-        </div>
-        <div style={{ textAlign: 'center', flexGrow: 1 }}>
-          <h1>GÜNLÜK YAŞAM AKTİVİTESİ</h1>
-          <p>Hatırlatıcı ve Takip Sistemi</p>
-        </div>
-        <div style={{ minWidth: '150px', textAlign: 'right' }}>
-          <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>{currentUser?.email}</p>
-        </div>
-      </header>
+      <Sidebar 
+        buttons={sidebarButtons} 
+        title="GÜNLÜK TAKİP"
+        subtitle="Kullanıcı Panosu"
+      />
 
       <div className="board">
         <Column 

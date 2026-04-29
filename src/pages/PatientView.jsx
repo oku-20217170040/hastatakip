@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { defaultTasks } from '../data/defaultTasks';
 import Column from '../components/Column';
-import TaskItem from '../components/TaskItem';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
 import HistoryModal from '../components/HistoryModal';
+import Sidebar from '../components/Sidebar';
 import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const PatientView = () => {
@@ -115,35 +115,19 @@ const PatientView = () => {
   const afternoonTasks = userTasks.filter(t => t.timeOfDay === 'afternoon');
   const eveningTasks = userTasks.filter(t => t.timeOfDay === 'evening');
 
+  const sidebarButtons = [
+    { label: 'Geri Dön', icon: '🔙', onClick: () => navigate(-1), background: '#f5f5f5', color: '#333' },
+    { label: 'Geçmişi Gör', icon: '🕒', onClick: () => setIsHistoryOpen(true), background: '#e8f0fe', color: '#1a73e8' },
+    { label: isEditingTasks ? 'Düzenlemeyi Bitir' : 'Görevleri Düzenle', icon: '✏️', onClick: () => setIsEditingTasks(!isEditingTasks), background: isEditingTasks ? '#fce8e6' : '#fef7e0', color: isEditingTasks ? '#d93025' : '#e37400', closeOnClick: false }
+  ];
+
   return (
     <div className="app-container">
-      <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <button onClick={() => navigate(-1)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#4a86e8' }}>
-            Geri Dön
-          </button>
-        </div>
-        <div style={{ textAlign: 'center', flexGrow: 1 }}>
-          <h1 style={{ color: '#1a365d' }}>{patientName.toUpperCase()} - GÜNLÜK TAKİP</h1>
-          <p>Bakıcı Kontrol Ekranı</p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            onClick={() => setIsHistoryOpen(true)} 
-            className="auth-btn" 
-            style={{ background: '#4a86e8', color: 'white' }}
-          >
-            Geçmişi Gör
-          </button>
-          <button 
-            onClick={() => setIsEditingTasks(!isEditingTasks)} 
-            className="auth-btn" 
-            style={{ padding: '8px 15px', fontSize: '0.9rem', background: isEditingTasks ? '#e06666' : '#f4b400', color: isEditingTasks ? 'white' : 'black' }}
-          >
-            {isEditingTasks ? 'Düzenlemeyi Bitir' : 'Görevleri Düzenle'}
-          </button>
-        </div>
-      </header>
+      <Sidebar 
+        buttons={sidebarButtons} 
+        title={`${patientName.toUpperCase()} - GÜNLÜK TAKİP`}
+        subtitle="Bakıcı Kontrol Ekranı"
+      />
 
       {loading ? (
         <LoadingScreen />

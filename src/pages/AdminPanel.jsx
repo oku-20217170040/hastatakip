@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
+import Sidebar from '../components/Sidebar';
 
 const AdminPanel = () => {
   const { currentUser, logout } = useAuth();
@@ -44,24 +45,21 @@ const AdminPanel = () => {
     }
   };
 
+  const sidebarButtons = [
+    { label: 'Profil', icon: '👤', onClick: () => navigate('/profile'), background: '#e6f4ea', color: '#137333' },
+    { label: 'Çıkış', icon: '🚪', onClick: logout, background: '#fce8e6', color: '#d93025' }
+  ];
+
   return (
     <div className="app-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c', marginRight: '10px' }}>Profil</button>
-          <button onClick={logout} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#e06666' }}>Çıkış</button>
-        </div>
-        <div style={{ textAlign: 'center', flexGrow: 1 }}>
-          <h1 style={{ color: '#d32f2f' }}>SİSTEM YÖNETİMİ (ADMİN)</h1>
-          <p>Tüm Kullanıcılar ve Veriler</p>
-        </div>
-        <div style={{ minWidth: '150px', textAlign: 'right' }}>
-          <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>{currentUser?.email}</p>
-        </div>
-      </header>
+      <Sidebar 
+        buttons={sidebarButtons} 
+        title="SİSTEM YÖNETİMİ (ADMİN)"
+        subtitle="Tüm Kullanıcıları Yönet"
+      />
 
       {loading ? <LoadingScreen /> : (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div style={{ maxWidth: '1000px', margin: '20px auto', background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <h2 style={{ borderBottom: '2px solid #f0f0f0', paddingBottom: '10px' }}>Kullanıcı Listesi ({users.length})</h2>
           
           <div style={{ overflowX: 'auto' }}>

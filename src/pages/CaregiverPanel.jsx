@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
+import Sidebar from '../components/Sidebar';
 
 const CaregiverPanel = () => {
   const { currentUser, userRole, logout } = useAuth();
@@ -69,22 +70,19 @@ const CaregiverPanel = () => {
     }
   };
 
+  const sidebarButtons = [
+    { label: 'Admin Panel', icon: '👑', onClick: () => navigate('/admin'), background: '#fef7e0', color: '#b08d00', isHidden: userRole !== 'admin' },
+    { label: 'Profil', icon: '👤', onClick: () => navigate('/profile'), background: '#e6f4ea', color: '#137333' },
+    { label: 'Çıkış', icon: '🚪', onClick: handleLogout, background: '#fce8e6', color: '#d93025' }
+  ];
+
   return (
     <div className="app-container">
-      <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {userRole === 'admin' && (
-            <button onClick={() => navigate('/admin')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#f4b400', color: 'black' }}>👑 Admin Panel</button>
-          )}
-          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
-          <button onClick={handleLogout} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#e06666' }}>Çıkış</button>
-        </div>
-        <div style={{ textAlign: 'center', flexGrow: 1 }}>
-          <h1 style={{ color: '#1a365d' }}>BAKICI PANELİ</h1>
-          <p>Hoşgeldin, {currentUser?.email}</p>
-        </div>
-        <div style={{ minWidth: '150px' }}></div>
-      </header>
+      <Sidebar 
+        buttons={sidebarButtons} 
+        title="BAKICI PANELİ"
+        subtitle={`Hoşgeldin, ${currentUser?.email}`}
+      />
 
       <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
         
