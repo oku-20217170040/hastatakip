@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { defaultTasks } from '../data/defaultTasks';
 import Column from '../components/Column';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
 import HistoryModal from '../components/HistoryModal';
 import Sidebar from '../components/Sidebar';
@@ -20,6 +20,7 @@ const PatientView = () => {
   // Task Editing State
   const [isEditingTasks, setIsEditingTasks] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('morning');
   const [newTaskIcon, setNewTaskIcon] = useState('Activity');
@@ -38,10 +39,10 @@ const PatientView = () => {
         const userDocRef = doc(db, 'users', patientId);
         unsubUser = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
-            setPatientName(docSnap.data().name || 'İsimsiz Hasta');
-            if (docSnap.data().customTasks) {
-              setUserTasks(docSnap.data().customTasks);
-            }
+            const data = docSnap.data();
+            setPatientName(data.name || 'İsimsiz Hasta');
+            if (data.customTasks) setUserTasks(data.customTasks);
+            if (typeof data.voiceEnabled === 'boolean') setIsVoiceEnabled(data.voiceEnabled);
           }
         });
 
@@ -115,10 +116,21 @@ const PatientView = () => {
   const afternoonTasks = userTasks.filter(t => t.timeOfDay === 'afternoon');
   const eveningTasks = userTasks.filter(t => t.timeOfDay === 'evening');
 
+  const toggleVoice = async () => {
+    const newVal = !isVoiceEnabled;
+    setIsVoiceEnabled(newVal); // Optimistic UI update
+    try {
+      await updateDoc(doc(db, 'users', patientId), { voiceEnabled: newVal });
+    } catch (err) {
+      console.error('Ses ayarı kaydedilemedi:', err);
+    }
+  };
+
   const sidebarButtons = [
     { label: 'Geri Dön', icon: '🔙', onClick: () => navigate(-1), background: '#f5f5f5', color: '#333' },
     { label: 'Geçmişi Gör', icon: '🕒', onClick: () => setIsHistoryOpen(true), background: '#e8f0fe', color: '#1a73e8' },
-    { label: isEditingTasks ? 'Düzenlemeyi Bitir' : 'Görevleri Düzenle', icon: '✏️', onClick: () => setIsEditingTasks(!isEditingTasks), background: isEditingTasks ? '#fce8e6' : '#fef7e0', color: isEditingTasks ? '#d93025' : '#e37400', closeOnClick: false }
+    { label: isEditingTasks ? 'Düzenlemeyi Bitir' : 'Görevleri Düzenle', icon: '✏️', onClick: () => setIsEditingTasks(!isEditingTasks), background: isEditingTasks ? '#fce8e6' : '#fef7e0', color: isEditingTasks ? '#d93025' : '#e37400', closeOnClick: false },
+    { label: isVoiceEnabled ? 'Hastanın Sesi: Açık' : 'Hastanın Sesi: Kapalı', icon: isVoiceEnabled ? '🔊' : '🔇', onClick: toggleVoice, background: isVoiceEnabled ? '#e8f0fe' : '#f1f3f4', color: isVoiceEnabled ? '#1a73e8' : '#5f6368', closeOnClick: false }
   ];
 
   return (

@@ -3,7 +3,7 @@ import { defaultTasks } from '../data/defaultTasks';
 import Column from '../components/Column';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import HistoryModal from '../components/HistoryModal';
@@ -50,8 +50,14 @@ const Dashboard = () => {
 
       try {
         unsubUser = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().customTasks) {
-            setUserTasks(docSnap.data().customTasks);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.customTasks) {
+              setUserTasks(data.customTasks);
+            }
+            if (typeof data.voiceEnabled === 'boolean') {
+              setIsVoiceEnabled(data.voiceEnabled);
+            }
           }
         });
 
@@ -126,11 +132,21 @@ const Dashboard = () => {
     return <LoadingScreen />;
   }
 
+  const toggleVoice = async () => {
+    const newVal = !isVoiceEnabled;
+    setIsVoiceEnabled(newVal); // Optimistic UI update
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { voiceEnabled: newVal });
+    } catch (err) {
+      console.error('Ses ayarı kaydedilemedi:', err);
+    }
+  };
+
   const sidebarButtons = [
     { label: 'Admin Panel', icon: '👑', onClick: () => navigate('/admin'), background: '#fef7e0', color: '#b08d00', isHidden: userRole !== 'admin' },
     { label: 'Geçmişi Gör', icon: '🕒', onClick: () => setIsHistoryOpen(true), background: '#e8f0fe', color: '#1a73e8' },
     { label: 'Profil', icon: '👤', onClick: () => navigate('/profile'), background: '#e6f4ea', color: '#137333' },
-    { label: isVoiceEnabled ? 'Ses Açık' : 'Ses Kapalı', icon: isVoiceEnabled ? '🔊' : '🔇', onClick: () => setIsVoiceEnabled(!isVoiceEnabled), background: isVoiceEnabled ? '#e8f0fe' : '#f1f3f4', color: isVoiceEnabled ? '#1a73e8' : '#5f6368', closeOnClick: false },
+    { label: isVoiceEnabled ? 'Ses Açık' : 'Ses Kapalı', icon: isVoiceEnabled ? '🔊' : '🔇', onClick: toggleVoice, background: isVoiceEnabled ? '#e8f0fe' : '#f1f3f4', color: isVoiceEnabled ? '#1a73e8' : '#5f6368', closeOnClick: false },
     { label: 'Çıkış', icon: '🚪', onClick: logout, background: '#fce8e6', color: '#d93025' }
   ];
 
