@@ -11,6 +11,8 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const isSuperAdmin = currentUser?.email === 'serhatsatici0@gmail.com';
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -91,11 +93,14 @@ const AdminPanel = () => {
                         value={u.role} 
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-                        disabled={u.id === currentUser.uid} // Kendi rolünü değiştiremesin
+                        disabled={
+                          u.id === currentUser.uid || // Kendini değiştiremez
+                          (u.email === 'serhatsatici0@gmail.com' && !isSuperAdmin) // Super Admin'e başkası dokunamaz
+                        }
                       >
                         <option value="patient">Hasta</option>
                         <option value="caregiver">Bakıcı</option>
-                        <option value="admin">Admin</option>
+                        {(isSuperAdmin || u.role === 'admin') && <option value="admin">Admin</option>}
                       </select>
                     </td>
                     <td style={{ padding: '12px' }}>

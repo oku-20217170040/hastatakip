@@ -52,9 +52,18 @@ export function AuthProvider({ children }) {
       if (user) {
         // Fetch role from firestore
         try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const docRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(docRef);
           if (userDoc.exists()) {
-            setUserRole(userDoc.data().role);
+            let role = userDoc.data().role;
+            
+            // SUPER ADMIN KONTROLÜ
+            if (user.email === 'serhatsatici0@gmail.com' && role !== 'admin') {
+              role = 'admin';
+              await setDoc(docRef, { role: 'admin' }, { merge: true });
+            }
+            
+            setUserRole(role);
           }
         } catch (error) {
           console.error("Error fetching user role:", error);

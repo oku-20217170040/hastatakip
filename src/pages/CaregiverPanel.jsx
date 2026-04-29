@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'fireb
 import LoadingScreen from '../components/LoadingScreen';
 
 const CaregiverPanel = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userRole, logout } = useAuth();
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,9 +71,12 @@ const CaregiverPanel = () => {
 
   return (
     <div className="app-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c', marginRight: '10px' }}>Profil</button>
+      <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {userRole === 'admin' && (
+            <button onClick={() => navigate('/admin')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#f4b400', color: 'black' }}>👑 Admin Panel</button>
+          )}
+          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
           <button onClick={handleLogout} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#e06666' }}>Çıkış</button>
         </div>
         <div style={{ textAlign: 'center', flexGrow: 1 }}>

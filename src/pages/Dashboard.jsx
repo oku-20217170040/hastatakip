@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 
 const Dashboard = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userRole, logout } = useAuth();
   const navigate = useNavigate();
   const [taskStatuses, setTaskStatuses] = useState({});
   const [userTasks, setUserTasks] = useState(defaultTasks);
@@ -120,6 +120,9 @@ const Dashboard = () => {
     <div className="app-container">
       <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
+          {userRole === 'admin' && (
+            <button onClick={() => navigate('/admin')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#f4b400', color: 'black' }}>👑 Admin Panel</button>
+          )}
           <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
           <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: isVoiceEnabled ? '#4a86e8' : '#666', display: 'flex', alignItems: 'center', gap: '5px' }}>
             {isVoiceEnabled ? '🔊 Ses Açık' : '🔇 Ses Kapalı'}
