@@ -1,0 +1,166 @@
+import React, { useState, useEffect } from 'react';
+import { defaultTasks } from '../data/defaultTasks';
+import Column from '../components/Column';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import LoadingScreen from '../components/LoadingScreen';
+
+const Dashboard = () => {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [taskStatuses, setTaskStatuses] = useState({});
+  const [userTasks, setUserTasks] = useState(defaultTasks);
+  const [loading, setLoading] = useState(true);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+
+  // Sesli Asistan Fonksiyonu
+  const speak = (text) => {
+    if (isVoiceEnabled && 'speechSynthesis' in window) {
+      // Önceki konuşmaları durdur
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'tr-TR'; // Türkçe konuşması için
+      utterance.rate = 0.9; // Yaşlılar için biraz daha yavaş ve tane tane
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Load from Firestore on mount
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Listener for statuses and tasks
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const todayDocRef = doc(db, 'users', currentUser.uid, 'tracker', 'today');
+    
+    // Unsubscribe from multiple listeners
+    let unsubUser = () => {};
+    let unsubToday = () => {};
+
+    try {
+      unsubUser = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists() && docSnap.data().customTasks) {
+          setUserTasks(docSnap.data().customTasks);
+        }
+      });
+
+      unsubToday = onSnapshot(todayDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setTaskStatuses(docSnap.data().statuses || {});
+        } else {
+          setTaskStatuses({});
+        }
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
+
+    return () => {
+      unsubUser();
+      unsubToday();
+    };
+  }, [currentUser]);
+
+  // Save to Firestore whenever statuses change
+  const handleToggleStatus = async (taskId, newStatus) => {
+    // Sesli geri bildirim (Sadece görev yapıldı işaretlendiğinde)
+    if (newStatus) {
+      const completedTask = userTasks.find(t => t.id === taskId);
+      if (completedTask) {
+        speak(`Harika, ${completedTask.title} görevini başarıyla tamamladın.`);
+      }
+    }
+
+    // Optimistic UI update
+    const newStatuses = {
+      ...taskStatuses,
+      [taskId]: newStatus
+    };
+    setTaskStatuses(newStatuses);
+
+    if (currentUser) {
+      try {
+        const docRef = doc(db, 'users', currentUser.uid, 'tracker', 'today');
+        await setDoc(docRef, { statuses: newStatuses }, { merge: true });
+      } catch (error) {
+        console.error("Firestore write error:", error);
+      }
+    }
+  };
+
+  const handleResetDaily = async () => {
+    if (window.confirm('Bugünün tüm kayıtlarını sıfırlamak istediğinize emin misiniz?')) {
+      setTaskStatuses({});
+      if (currentUser) {
+        try {
+          const docRef = doc(db, 'users', currentUser.uid, 'tracker', 'today');
+          await setDoc(docRef, { statuses: {} });
+        } catch (error) {
+          console.error("Firestore reset error:", error);
+        }
+      }
+    }
+  };
+
+  const morningTasks = userTasks.filter(t => t.timeOfDay === 'morning');
+  const afternoonTasks = userTasks.filter(t => t.timeOfDay === 'afternoon');
+  const eveningTasks = userTasks.filter(t => t.timeOfDay === 'evening');
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <div className="app-container">
+      <header style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
+          <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: isVoiceEnabled ? '#4a86e8' : '#666', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {isVoiceEnabled ? '🔊 Ses Açık' : '🔇 Ses Kapalı'}
+          </button>
+          <button onClick={logout} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#e06666' }}>Çıkış</button>
+        </div>
+        <div style={{ textAlign: 'center', flexGrow: 1 }}>
+          <h1>GÜNLÜK YAŞAM AKTİVİTESİ</h1>
+          <p>Hatırlatıcı ve Takip Sistemi</p>
+        </div>
+        <div style={{ minWidth: '150px', textAlign: 'right' }}>
+          <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>{currentUser?.email}</p>
+        </div>
+      </header>
+
+      <div className="board">
+        <Column 
+          timeOfDay="morning" 
+          tasks={morningTasks} 
+          taskStatuses={taskStatuses} 
+          onToggleStatus={handleToggleStatus} 
+        />
+        <Column 
+          timeOfDay="afternoon" 
+          tasks={afternoonTasks} 
+          taskStatuses={taskStatuses} 
+          onToggleStatus={handleToggleStatus} 
+        />
+        <Column 
+          timeOfDay="evening" 
+          tasks={eveningTasks} 
+          taskStatuses={taskStatuses} 
+          onToggleStatus={handleToggleStatus} 
+        />
+      </div>
+
+      <button className="reset-btn" onClick={handleResetDaily}>
+        Günü Sıfırla
+      </button>
+    </div>
+  );
+};
+
+export default Dashboard;
