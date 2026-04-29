@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
 import Sidebar from '../components/Sidebar';
 
@@ -41,6 +41,26 @@ const AdminPanel = () => {
       } catch (error) {
         console.error("Rol güncellenirken hata:", error);
         alert('Rol güncellenemedi.');
+      }
+    }
+  };
+
+  const handleDeleteUser = async (userId, userEmail) => {
+    if (userEmail === 'serhatsatici0@gmail.com') {
+      alert('Güvenlik İhlali: Süper Admin hesabı silinemez!');
+      return;
+    }
+    if (userId === currentUser.uid) {
+      alert('Kendi hesabınızı silemezsiniz!');
+      return;
+    }
+    if (window.confirm(`DİKKAT: ${userEmail} hesabının tüm verilerini silmek istediğinize emin misiniz? (Bu işlem geri alınamaz)`)) {
+      try {
+        await deleteDoc(doc(db, 'users', userId));
+        fetchUsers();
+      } catch (error) {
+        console.error("Kullanıcı silinirken hata:", error);
+        alert('Kullanıcı veritabanından silinemedi.');
       }
     }
   };
@@ -101,13 +121,21 @@ const AdminPanel = () => {
                         {(isSuperAdmin || u.role === 'admin') && <option value="admin">Admin</option>}
                       </select>
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ padding: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {u.role === 'patient' && (
                         <button 
                           onClick={() => navigate(`/patient/${u.id}`)}
                           style={{ padding: '5px 10px', background: '#4a86e8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                         >
-                          Panosunu Gör / Düzenle
+                          Panosunu Gör
+                        </button>
+                      )}
+                      {u.email !== 'serhatsatici0@gmail.com' && u.id !== currentUser.uid && (
+                        <button 
+                          onClick={() => handleDeleteUser(u.id, u.email)}
+                          style={{ padding: '5px 10px', background: '#e06666', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                        >
+                          Sil
                         </button>
                       )}
                     </td>
