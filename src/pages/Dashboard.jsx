@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
+import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const Dashboard = () => {
   const { currentUser, userRole, logout } = useAuth();
@@ -41,25 +42,31 @@ const Dashboard = () => {
     let unsubUser = () => {};
     let unsubToday = () => {};
 
-    try {
-      unsubUser = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists() && docSnap.data().customTasks) {
-          setUserTasks(docSnap.data().customTasks);
-        }
-      });
+    const initializeData = async () => {
+      await checkAndResetDailyTasks(currentUser.uid);
 
-      unsubToday = onSnapshot(todayDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setTaskStatuses(docSnap.data().statuses || {});
-        } else {
-          setTaskStatuses({});
-        }
+      try {
+        unsubUser = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists() && docSnap.data().customTasks) {
+            setUserTasks(docSnap.data().customTasks);
+          }
+        });
+
+        unsubToday = onSnapshot(todayDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setTaskStatuses(docSnap.data().statuses || {});
+          } else {
+            setTaskStatuses({});
+          }
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error(err);
         setLoading(false);
-      });
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-    }
+      }
+    };
+
+    initializeData();
 
     return () => {
       unsubUser();

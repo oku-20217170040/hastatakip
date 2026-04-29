@@ -5,6 +5,7 @@ import Column from '../components/Column';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
+import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const PatientView = () => {
   const { patientId } = useParams();
@@ -27,30 +28,36 @@ const PatientView = () => {
     let unsubUser = () => {};
     let unsubToday = () => {};
 
-    try {
-      const userDocRef = doc(db, 'users', patientId);
-      unsubUser = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setPatientName(docSnap.data().name || 'İsimsiz Hasta');
-          if (docSnap.data().customTasks) {
-            setUserTasks(docSnap.data().customTasks);
-          }
-        }
-      });
+    const initializePatientData = async () => {
+      await checkAndResetDailyTasks(patientId);
 
-      const todayDocRef = doc(db, 'users', patientId, 'tracker', 'today');
-      unsubToday = onSnapshot(todayDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setTaskStatuses(docSnap.data().statuses || {});
-        } else {
-          setTaskStatuses({});
-        }
+      try {
+        const userDocRef = doc(db, 'users', patientId);
+        unsubUser = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setPatientName(docSnap.data().name || 'İsimsiz Hasta');
+            if (docSnap.data().customTasks) {
+              setUserTasks(docSnap.data().customTasks);
+            }
+          }
+        });
+
+        const todayDocRef = doc(db, 'users', patientId, 'tracker', 'today');
+        unsubToday = onSnapshot(todayDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setTaskStatuses(docSnap.data().statuses || {});
+          } else {
+            setTaskStatuses({});
+          }
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error(error);
         setLoading(false);
-      });
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-    }
+      }
+    };
+
+    initializePatientData();
 
     return () => {
       unsubUser();
