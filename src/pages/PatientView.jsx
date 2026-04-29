@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { defaultTasks } from '../data/defaultTasks';
 import Column from '../components/Column';
+import TaskItem from '../components/TaskItem';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import LoadingScreen from '../components/LoadingScreen';
+import HistoryModal from '../components/HistoryModal';
 import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const PatientView = () => {
@@ -17,6 +19,7 @@ const PatientView = () => {
   
   // Task Editing State
   const [isEditingTasks, setIsEditingTasks] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('morning');
   const [newTaskIcon, setNewTaskIcon] = useState('Activity');
@@ -124,11 +127,18 @@ const PatientView = () => {
           <h1 style={{ color: '#1a365d' }}>{patientName.toUpperCase()} - GÜNLÜK TAKİP</h1>
           <p>Bakıcı Kontrol Ekranı</p>
         </div>
-        <div style={{ minWidth: '100px', textAlign: 'right' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => setIsHistoryOpen(true)} 
+            className="auth-btn" 
+            style={{ background: '#4a86e8', color: 'white' }}
+          >
+            Geçmişi Gör
+          </button>
           <button 
             onClick={() => setIsEditingTasks(!isEditingTasks)} 
             className="auth-btn" 
-            style={{ padding: '8px 15px', fontSize: '0.9rem', background: isEditingTasks ? '#e06666' : '#f4b400', color: 'black' }}
+            style={{ padding: '8px 15px', fontSize: '0.9rem', background: isEditingTasks ? '#e06666' : '#f4b400', color: isEditingTasks ? 'white' : 'black' }}
           >
             {isEditingTasks ? 'Düzenlemeyi Bitir' : 'Görevleri Düzenle'}
           </button>
@@ -207,6 +217,13 @@ const PatientView = () => {
           />
         </div>
       )}
+
+      <HistoryModal 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+        userId={patientId} 
+        userTasks={userTasks} 
+      />
     </div>
   );
 };

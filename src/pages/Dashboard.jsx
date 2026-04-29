@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
+import HistoryModal from '../components/HistoryModal';
 import { checkAndResetDailyTasks } from '../utils/dailyReset';
 
 const Dashboard = () => {
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [userTasks, setUserTasks] = useState(defaultTasks);
   const [loading, setLoading] = useState(true);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Sesli Asistan Fonksiyonu
   const speak = (text) => {
@@ -130,6 +132,7 @@ const Dashboard = () => {
           {userRole === 'admin' && (
             <button onClick={() => navigate('/admin')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#f4b400', color: 'black' }}>👑 Admin Panel</button>
           )}
+          <button onClick={() => setIsHistoryOpen(true)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#4a86e8', color: 'white' }}>Geçmişi Gör</button>
           <button onClick={() => navigate('/profile')} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: '#388e3c' }}>Profil</button>
           <button onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} className="auth-btn" style={{ padding: '8px 15px', fontSize: '0.9rem', background: isVoiceEnabled ? '#4a86e8' : '#666', display: 'flex', alignItems: 'center', gap: '5px' }}>
             {isVoiceEnabled ? '🔊 Ses Açık' : '🔇 Ses Kapalı'}
@@ -169,6 +172,13 @@ const Dashboard = () => {
       <button className="reset-btn" onClick={handleResetDaily}>
         Günü Sıfırla
       </button>
+
+      <HistoryModal 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+        userId={currentUser?.uid} 
+        userTasks={userTasks} 
+      />
     </div>
   );
 };
